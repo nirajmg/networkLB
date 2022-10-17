@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"nlb/k8s"
 )
 
 // NewProxy takes target host and creates a reverse proxy
@@ -32,6 +33,16 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	if err := k8s.NewClient(); err != nil {
+		panic(err)
+	}
+
+	ip, err := k8s.GetPodDetails("postgresql-0")
+	if err != nil {
+		panic(err)
+	}
+	print(ip)
 
 	// handle all requests to your server using the proxy
 	http.HandleFunc("/", ProxyRequestHandler(proxy))
