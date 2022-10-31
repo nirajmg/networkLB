@@ -1,5 +1,4 @@
 // Source: https://blog.joshsoftware.com/2021/05/25/simple-and-powerful-reverseproxy-in-go/
-
 package main
 
 import (
