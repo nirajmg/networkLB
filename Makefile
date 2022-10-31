@@ -1,6 +1,6 @@
 kconfig :=  $(shell ls ~/.kube/config)
 
-all: database
+all: clean build docker helm
 
 build:
 	rm -rf nlb/bin
@@ -10,7 +10,7 @@ build:
 docker:
 	cd nlb; docker build -t nlb:latest .
 
-database:
+helm:
 	helm install postgresql infra/postgresql
 	helm install nlb infra/nlb  --set kubeconfig=$(shell ls ~/.kube/config)
 
