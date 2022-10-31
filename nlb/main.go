@@ -10,6 +10,10 @@ import (
 	"nlb/k8s"
 )
 
+func health(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Healthy")
+}
+
 // The server can set a cookie
 func set(w http.ResponseWriter, req *http.Request) {
 	http.SetCookie(w, &http.Cookie{
@@ -55,6 +59,7 @@ func NewProxy(targetHost string) (*httputil.ReverseProxy, error) {
 func ProxyRequestHandler(proxy *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
 	print("Here we are!\n")
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		cookies := r.Cookies()
 		fmt.Printf("%d\n", len(cookies))
 		if len(cookies) == 0 {
@@ -91,5 +96,6 @@ func main() {
 
 	// handle all requests to your server using the proxy
 	http.HandleFunc("/", ProxyRequestHandler(proxy))
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	http.HandleFunc("/health", health)
+	log.Fatal(http.ListenAndServe(":80", nil))
 }
