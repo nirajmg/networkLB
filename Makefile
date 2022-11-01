@@ -1,12 +1,10 @@
 kconfig :=  $(shell ls ~/.kube/config)
 
-all: clean build docker helm
+all:  build docker helm
 
-build:
-	mkdir -p nlb/bin
-	cd ./nlb;pwd; GOOS=linux GARCH=amd64 CGO_ENABLED=0 go build -o bin/nlb main.go
-	mkdir -p  server/bin
-	cd ./server;pwd; GOOS=linux GARCH=amd64 CGO_ENABLED=0 go build -o bin/server main.go
+build:	
+	mkdir -p nlb/bin;cd ./nlb;pwd; GOOS=linux GARCH=amd64 CGO_ENABLED=0 go build -o bin/nlb main.go
+	mkdir -p server/bin; cd ./server;pwd; GOOS=linux GARCH=amd64 CGO_ENABLED=0 go build -o bin/server main.go
 
 docker:
 	cd nlb; docker build -t nlb:latest .
@@ -15,6 +13,7 @@ docker:
 helm:
 	helm install postgresql infra/postgresql
 	helm install nlb infra/nlb  --set kubeconfig=$(shell ls ~/.kube/config)
+	helm install server infra/server 
 
 
 clean:
