@@ -15,7 +15,6 @@ helm:
 	helm install nlb infra/nlb  --set kubeconfig=$(shell ls ~/.kube/config)
 	helm install server infra/server 
 
-
 clean:
 	rm -rf nlb/bin
 	helm delete postgresql
