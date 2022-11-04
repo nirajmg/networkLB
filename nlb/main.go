@@ -55,6 +55,7 @@ func NewProxy(targetHost string) (*httputil.ReverseProxy, error) {
 	// p.Director = func(w *http.Response) {
 	// 	w.Header.Set("cookie", "shit")
 	// }
+	//How to modify responses
 	p.ModifyResponse = func(res *http.Response) error {
 		if res.StatusCode == 200 {
 			res.Header.Set("cookie", "cook")
