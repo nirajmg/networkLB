@@ -51,17 +51,37 @@ func NewProxy(targetHost string) (*httputil.ReverseProxy, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	return httputil.NewSingleHostReverseProxy(url), nil
+	p := httputil.NewSingleHostReverseProxy(url)
+	// p.Director = func(w *http.Response) {
+	// 	w.Header.Set("cookie", "shit")
+	// }
+	p.ModifyResponse = func(res *http.Response) error {
+		if res.StatusCode == 200 {
+			res.Header.Set("cookie", "cook")
+		}
+		return nil
+	}
+	return p, nil
 }
 
 // ProxyRequestHandler handles the http request using proxy
-func ProxyRequestHandler(proxy *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
-	print("Here we are!\n")
+func ProxyRequestHandler() func(http.ResponseWriter, *http.Request) {
+	//parse the request
+	fmt.Println("In Proxy Request Handler")
 	return func(w http.ResponseWriter, r *http.Request) {
+		// angel has a cookie
+		// read the cookie , remove from the request , take the ip and send it to that ip
+		// just need r
+		// also make sure that return has cookie
 
+		// oh no she doesnt
+		// generate cookie for now put a random server ip cookie = ip
+		// this should happend after server finished the response
+		// generate a hash, map the hash to ip
+		fmt.Println("Cookies")
 		cookies := r.Cookies()
-		fmt.Printf("%d\n", len(cookies))
+		fmt.Printf("%d\n", cookies)
+
 		if len(cookies) == 0 {
 			set(w, r)
 		} else {
@@ -73,17 +93,21 @@ func ProxyRequestHandler(proxy *httputil.ReverseProxy) func(http.ResponseWriter,
 				}
 			}
 		}
+
+		proxy, err := NewProxy("http://localhost:30691") //change this line
+		if err != nil {
+			panic(err)
+		}
+		//stripping the cookie information
+
+		//Set cookie for the client
 		proxy.ServeHTTP(w, r)
 	}
 }
 
 func main() {
 	// initialize a reverse proxy and pass the actual backend server url here
-	proxy, err := NewProxy("http://google.com")
-	if err != nil {
-		panic(err)
-	}
-
+	print("In NLB\n")
 	if err := k8s.NewClient(); err != nil {
 		panic(err)
 	}
@@ -92,10 +116,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	print(ip)
+	fmt.Println("Ip: ", ip)
 
 	// handle all requests to your server using the proxy
-	http.HandleFunc("/", ProxyRequestHandler(proxy))
+	http.HandleFunc("/", ProxyRequestHandler())
 	http.HandleFunc("/health", health)
 	log.Fatal(http.ListenAndServe(":80", nil))
 }
