@@ -1,5 +1,5 @@
 package algo
 
-type algo interface {
+type Algorithm interface {
 	GetIP([]string) (string, error)
 }

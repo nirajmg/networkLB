@@ -15,9 +15,3 @@ func (rr *Roundrobin) GetIP(ip_lst []string) (string, error) {
 	return ip, nil
 
 }
-
-func New() *Roundrobin {
-	return &Roundrobin{
-		index: 0,
-	}
-}
