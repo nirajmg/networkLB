@@ -8,7 +8,10 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"nlb/k8s"
+	"time"
 )
+
+var ips []string
 
 func health(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Healthy")
@@ -113,11 +116,21 @@ func main() {
 		panic(err)
 	}
 
-	ip, err := k8s.GetPodDetails("postgresql-0")
+	_, err := k8s.GetPodDetails("postgresql-0")
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Ip: ", ip)
+
+	go func() {
+		for {
+			time.Sleep(2 * time.Second)
+			ips, err := k8s.ListPod()
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println(ips)
+		}
+	}()
 
 	// handle all requests to your server using the proxy
 	http.HandleFunc("/", ProxyRequestHandler())
