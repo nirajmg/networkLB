@@ -7,11 +7,12 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"nlb/algo"
 	"nlb/k8s"
 	"time"
 )
 
-var ips []string
+var Ips *[]string
 
 func health(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Healthy")
@@ -109,6 +110,21 @@ func ProxyRequestHandler() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
+func UpdateIP() {
+
+	ips, err := k8s.ListPod()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(ips)
+	Ips = &ips
+	time.Sleep(2 * time.Second)
+
+}
+
+var algoIP algo.Algorithm
+
 func main() {
 	// initialize a reverse proxy and pass the actual backend server url here
 	print("In NLB\n")
@@ -120,17 +136,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	algoIP = &algo.Roundrobin{Index: 0}
 
 	go func() {
-		for {
-			time.Sleep(2 * time.Second)
-			ips, err := k8s.ListPod()
-			if err != nil {
-				panic(err)
-			}
-			fmt.Println(ips)
-		}
+		UpdateIP()
 	}()
+	time.Sleep(2 * time.Second)
+	ip, _ := algoIP.GetIP(Ips)
+	print(ip)
 
 	// handle all requests to your server using the proxy
 	http.HandleFunc("/", ProxyRequestHandler())
