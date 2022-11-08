@@ -165,8 +165,8 @@ replication:
   ## @param replication.numSynchronousReplicas Number of replicas that will have synchronous replication. Note: Cannot be greater than `readReplicas.replicaCount`.
   ## ref: https://www.postgresql.org/docs/current/runtime-config-wal.html#GUC-SYNCHRONOUS-COMMIT
   ##
-  synchronousCommit: "off"
-  numSynchronousReplicas: 0
+  synchronousCommit: "on"
+  numSynchronousReplicas: 3
   ## @param replication.applicationName Cluster application name. Useful for advanced replication settings
   ##
   applicationName: my_application
@@ -684,7 +684,7 @@ readReplicas:
   name: read
   ## @param readReplicas.replicaCount Number of PostgreSQL read only replicas
   ##
-  replicaCount: 1
+  replicaCount: 3
   ## @param readReplicas.extendedConfiguration Extended PostgreSQL read only replicas configuration (appended to main or default configuration)
   ## ref: https://github.com/bitnami/containers/tree/main/bitnami/postgresql#allow-settings-to-be-loaded-from-files-other-than-the-default-postgresqlconf
   ##

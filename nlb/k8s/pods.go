@@ -3,6 +3,7 @@ package k8s
 import (
 	"context"
 	"flag"
+	"fmt"
 	"path/filepath"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,4 +43,23 @@ func GetPodDetails(podName string) (string, error) {
 		return "", err
 	}
 	return pod.Status.PodIP, nil
+}
+
+func ListPod() ([]string, error) {
+
+	listOptions := metav1.ListOptions{
+		LabelSelector: "app.kubernetes.io/name=server",
+	}
+
+	podList, err := Client.CoreV1().Pods("default").List(context.Background(), listOptions)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("%v", podList.Items[0].Status.PodIP)
+	podIPs := make([]string, 0)
+	for _, v := range podList.Items {
+		podIPs = append(podIPs, v.Status.PodIP)
+	}
+
+	return podIPs, nil
 }
