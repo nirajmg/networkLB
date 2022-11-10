@@ -10,7 +10,7 @@ import (
 // The server can set a cookie
 func Set(w http.ResponseWriter, req *http.Request, value string) {
 	http.SetCookie(w, &http.Cookie{
-		Name:  "my-cookie",
+		Name:  "nlb-cookie_abcde",
 		Value: value,
 		Path:  "/",
 	})
@@ -19,7 +19,7 @@ func Set(w http.ResponseWriter, req *http.Request, value string) {
 }
 
 func Read(w http.ResponseWriter, req *http.Request) string {
-	cookie, err := req.Cookie("my-cookie")
+	cookie, err := req.Cookie("nlb-cookie_abcde")
 	if err != nil {
 		http.Error(w, http.StatusText(400), http.StatusBadRequest)
 		return ""
@@ -57,6 +57,7 @@ func EncryptMessage(key string, message string) string {
 		fmt.Println(err)
 	}
 	msgByte := make([]byte, len(message))
+	fmt.Println("Message length", len([]byte(message)))
 	c.Encrypt(msgByte, []byte(message))
 	return hex.EncodeToString(msgByte)
 }

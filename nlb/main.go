@@ -10,10 +10,12 @@ import (
 	"nlb/algo"
 	"nlb/k8s"
 	"nlb/middleware"
+	"strings"
 	"time"
 )
 
 var Ips *[]string
+var algoIP algo.Algorithm
 
 func health(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Healthy")
@@ -25,6 +27,7 @@ func NewProxy(targetHost string) (*httputil.ReverseProxy, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("URL: ", url)
 	p := httputil.NewSingleHostReverseProxy(url)
 	return p, nil
 }
@@ -44,25 +47,28 @@ func ProxyRequestHandler() func(http.ResponseWriter, *http.Request) {
 		// this should happend after server finished the response
 		// generate a encryption, map the encryption to ip
 
-		fmt.Println("Cookies")
 		cookies := r.Cookies()
-		fmt.Printf("%d\n", cookies)
-		ipDecrypt := ""
+		fmt.Println("Cookies: ", cookies)
+		serverIp := ""
 		ipEncrypt := ""
-		isCookieExist := middleware.CookieExists(cookies, "my-cookies")
+		isCookieExist := middleware.CookieExists(cookies, "nlb-cookie_abcde")
 
 		if isCookieExist {
 			encryptedIp := middleware.Read(w, r)
-			ipDecrypt = string(middleware.DecryptMessage("my-cookie", encryptedIp))
+			decryptedMessage := string(middleware.DecryptMessage("nlb-cookie_abcde", encryptedIp))
+			strArr := strings.Split(decryptedMessage, "_")
+			serverIp = strArr[0]
 			//TODO: Strip the cookie information (LATER)
 		} else {
+			fmt.Println("Client does not have a cookie, generating...")
 			//Get a random ip and set serverIp to the random server ip
-			serverIp := "localhost"
+			serverIp, _ = algoIP.GetIP(Ips)
+			//TODO: Maybe use a hash to generate the message for encryption
 			//Encrypt the server ip and set that as the value of the cookie
-			ipEncrypt = middleware.EncryptMessage("my-cookie", serverIp)
+			ipEncrypt = middleware.EncryptMessage("nlb-cookie_abcde", serverIp+"_abcdef")
 		}
 
-		proxy, err := NewProxy("http://" + ipDecrypt + ":80") //change this line
+		proxy, err := NewProxy("http://" + serverIp + ":80") //change this line
 		if err != nil {
 			panic(err)
 		}
@@ -70,6 +76,7 @@ func ProxyRequestHandler() func(http.ResponseWriter, *http.Request) {
 		proxy.ModifyResponse = func(res *http.Response) error {
 			if res.StatusCode == 200 {
 				//Set cookie for the client
+				fmt.Println("Encrypted ip:", ipEncrypt)
 				middleware.Set(w, r, ipEncrypt)
 			}
 			return nil
@@ -90,8 +97,6 @@ func UpdateIP() {
 	time.Sleep(2 * time.Second)
 
 }
-
-var algoIP algo.Algorithm
 
 func main() {
 	// initialize a reverse proxy and pass the actual backend server url here
