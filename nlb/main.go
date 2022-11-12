@@ -86,16 +86,16 @@ func ProxyRequestHandler() func(http.ResponseWriter, *http.Request) {
 }
 
 func UpdateIP() {
+	for {
+		ips, err := k8s.ListPod()
+		if err != nil {
+			panic(err)
+		}
 
-	ips, err := k8s.ListPod()
-	if err != nil {
-		panic(err)
+		fmt.Println(ips)
+		Ips = &ips
+		time.Sleep(2 * time.Second)
 	}
-
-	fmt.Println(ips)
-	Ips = &ips
-	time.Sleep(2 * time.Second)
-
 }
 
 func main() {
@@ -114,6 +114,7 @@ func main() {
 	go func() {
 		UpdateIP()
 	}()
+
 	time.Sleep(2 * time.Second)
 	ip, _ := algoIP.GetIP(Ips)
 	print(ip)

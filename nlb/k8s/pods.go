@@ -3,7 +3,6 @@ package k8s
 import (
 	"context"
 	"flag"
-	"fmt"
 	"path/filepath"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,10 +54,12 @@ func ListPod() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("%v", podList.Items[0].Status.PodIP)
+
 	podIPs := make([]string, 0)
 	for _, v := range podList.Items {
-		podIPs = append(podIPs, v.Status.PodIP)
+		if v.Status.Phase == "Running" {
+			podIPs = append(podIPs, v.Status.PodIP)
+		}
 	}
 
 	return podIPs, nil
