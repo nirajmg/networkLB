@@ -7,45 +7,18 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"nlb/algo"
 	"nlb/k8s"
+	"nlb/middleware"
+	"strings"
 	"time"
 )
 
-var ips []string
+var Ips *[]string
+var algoIP algo.Algorithm
 
 func health(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Healthy")
-}
-
-// The server can set a cookie
-func set(w http.ResponseWriter, req *http.Request) {
-	http.SetCookie(w, &http.Cookie{
-		Name:  "my-cookie",
-		Value: "some value",
-		Path:  "/",
-	})
-	fmt.Fprintln(w, "COOKIE WRITTEN - CHECK YOUR BROWSER")
-	fmt.Fprintln(w, "in chrome go to: dev tools / application / cookies")
-}
-
-func read(w http.ResponseWriter, req *http.Request) {
-	c, err := req.Cookie("my-cookie")
-	if err != nil {
-		http.Error(w, http.StatusText(400), http.StatusBadRequest)
-		return
-	}
-	fmt.Fprintln(w, "YOUR COOKIE:", c)
-}
-
-func expire(w http.ResponseWriter, req *http.Request) {
-	c, err := req.Cookie("session")
-	if err != nil {
-		http.Redirect(w, req, "/set", http.StatusSeeOther)
-		return
-	}
-	c.MaxAge = -1 // delete cookie
-	http.SetCookie(w, c)
-	http.Redirect(w, req, "/", http.StatusSeeOther)
 }
 
 // NewProxy takes target host and creates a reverse proxy
@@ -54,17 +27,8 @@ func NewProxy(targetHost string) (*httputil.ReverseProxy, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("URL: ", url)
 	p := httputil.NewSingleHostReverseProxy(url)
-	// p.Director = func(w *http.Response) {
-	// 	w.Header.Set("cookie", "shit")
-	// }
-	//How to modify responses
-	p.ModifyResponse = func(res *http.Response) error {
-		if res.StatusCode == 200 {
-			res.Header.Set("cookie", "cook")
-		}
-		return nil
-	}
 	return p, nil
 }
 
@@ -81,32 +45,57 @@ func ProxyRequestHandler() func(http.ResponseWriter, *http.Request) {
 		// oh no she doesnt
 		// generate cookie for now put a random server ip cookie = ip
 		// this should happend after server finished the response
-		// generate a hash, map the hash to ip
-		fmt.Println("Cookies")
-		cookies := r.Cookies()
-		fmt.Printf("%d\n", cookies)
+		// generate a encryption, map the encryption to ip
 
-		if len(cookies) == 0 {
-			set(w, r)
+		cookies := r.Cookies()
+		fmt.Println("Cookies: ", cookies)
+		serverIp := ""
+		ipEncrypt := ""
+		isCookieExist := middleware.CookieExists(cookies, "nlb-cookie_abcde")
+
+		if isCookieExist {
+			encryptedIp := middleware.Read(w, r)
+			decryptedMessage := string(middleware.DecryptMessage("nlb-cookie_abcde", encryptedIp))
+			strArr := strings.Split(decryptedMessage, "_")
+			serverIp = strArr[0]
+			//TODO: Strip the cookie information (LATER)
 		} else {
-			for _, c := range cookies {
-				if c.Name == "my-cookie" {
-					read(w, r)
-				} else {
-					set(w, r)
-				}
-			}
+			fmt.Println("Client does not have a cookie, generating...")
+			//Get a random ip and set serverIp to the random server ip
+			serverIp, _ = algoIP.GetIP(Ips)
+			//TODO: Maybe use a hash to generate the message for encryption
+			//Encrypt the server ip and set that as the value of the cookie
+			ipEncrypt = middleware.EncryptMessage("nlb-cookie_abcde", serverIp+"_abcdef")
 		}
 
-		proxy, err := NewProxy("http://localhost:30691") //change this line
+		proxy, err := NewProxy("http://" + serverIp + ":80") //change this line
 		if err != nil {
 			panic(err)
 		}
-		//stripping the cookie information
-
-		//Set cookie for the client
+		//Configuration here to server, if we get a statuscode of 200 then set the cookie for the client
+		proxy.ModifyResponse = func(res *http.Response) error {
+			if res.StatusCode == 200 {
+				//Set cookie for the client
+				fmt.Println("Encrypted ip:", ipEncrypt)
+				middleware.Set(w, r, ipEncrypt)
+			}
+			return nil
+		}
 		proxy.ServeHTTP(w, r)
 	}
+}
+
+func UpdateIP() {
+
+	ips, err := k8s.ListPod()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(ips)
+	Ips = &ips
+	time.Sleep(2 * time.Second)
+
 }
 
 func main() {
@@ -120,17 +109,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	algoIP = &algo.Roundrobin{Index: 0}
 
 	go func() {
-		for {
-			time.Sleep(2 * time.Second)
-			ips, err := k8s.ListPod()
-			if err != nil {
-				panic(err)
-			}
-			fmt.Println(ips)
-		}
+		UpdateIP()
 	}()
+	time.Sleep(2 * time.Second)
+	ip, _ := algoIP.GetIP(Ips)
+	print(ip)
 
 	// handle all requests to your server using the proxy
 	http.HandleFunc("/", ProxyRequestHandler())
