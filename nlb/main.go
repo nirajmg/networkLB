@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-var Ips *[]string
+var Ips *[]*k8s.PodDetails
 var algoIP algo.Algorithm
 
 func health(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +93,7 @@ func UpdateIP() {
 			panic(err)
 		}
 
-		fmt.Println(ips)
+		fmt.Printf("%v", ips)
 		Ips = &ips
 		time.Sleep(2 * time.Second)
 	}
