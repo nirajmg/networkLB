@@ -2,9 +2,9 @@ package algo
 
 import (
 	//"fmt"
+	"log"
 	"strings"
 	"strconv"
-	"container/list"
 )
 
 type Ip_Hash struct{
@@ -12,7 +12,9 @@ type Ip_Hash struct{
 	Port string
 }
 
-func hash(ip string, port string, n int, ips *[]string)(string,error){
+func hash(ip string, port string, n int, ips []string)(string,error){
+
+	//ip_lst := *ips
 
 	//parse string by .
 	num_list := strings.FieldsFunc(ip, func(r rune) bool {
@@ -21,29 +23,37 @@ func hash(ip string, port string, n int, ips *[]string)(string,error){
 		}
 		return false
 	})
-	total_num int := strconv.Atoi(port)
+
+	total_num, err := strconv.Atoi(port)
+	if err != nil{
+		return "", err
+	}
 	//convert string to ints, add ints
-	for _,num := range ips {
+	for _,num := range num_list {
 		new_num,err := strconv.Atoi(num)
 		if err != nil{
-			return nil, err
+			return "", err
 		}
 		total_num += new_num
 	}
+	log.Print("sum: ", total_num)
 	// % by n
 	index := total_num % n
+	log.Print("index: ", index)
 	//lookup corresponding ip
 	server_ip := ips[index]
+	log.Print("server ip: ", server_ip)
 
 	return server_ip, err
 }
 
-func (ih *Iphash) Get_IP(ips *[]string)(string, error){
+func (ih *Ip_Hash) GetIP(ips *[]string)(string, error){
 	ip_lst := *ips
-	if ih.Index >= len(ip_lst) {
-		ih.Index = 0
-	}
-	ip,err := hash(ih.IP, len(ip_list), *ip_lst)
+
+	log.Print("hashing ip: ", ih.Ip)
+	log.Print("hashing port: ", ih.Port)
+
+	ip,err := hash(ih.Ip, ih.Port, len(ip_lst), ip_lst)
 
 	return ip, err
 }

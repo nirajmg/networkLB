@@ -109,7 +109,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	algoIP = &algo.Roundrobin{Index: 0}
+	//algoIP = &algo.Roundrobin{Index: 0}
+	algoIP = &algo.Ip_Hash{Ip: "192.168.0.1",Port:"8000"}
 
 	go func() {
 		UpdateIP()
