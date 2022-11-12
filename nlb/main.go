@@ -62,7 +62,8 @@ func ProxyRequestHandler() func(http.ResponseWriter, *http.Request) {
 		} else {
 			fmt.Println("Client does not have a cookie, generating...")
 			//Get a random ip and set serverIp to the random server ip
-			serverIp, _ = algoIP.GetIP(Ips)
+			// serverIp, _ = algoIP.GetIP(Ips)
+			serverIp := "10.1.0.145"
 			//TODO: Maybe use a hash to generate the message for encryption
 			//Encrypt the server ip and set that as the value of the cookie
 			ipEncrypt = middleware.EncryptMessage("nlb-cookie_abcde", serverIp+"_abcdef")

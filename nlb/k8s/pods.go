@@ -47,7 +47,7 @@ func GetPodDetails(podName string) (string, error) {
 func ListPod() ([]string, error) {
 
 	listOptions := metav1.ListOptions{
-		LabelSelector: "app.kubernetes.io/name=server",
+		LabelSelector: "app.server/filter=server",
 	}
 
 	podList, err := Client.CoreV1().Pods("default").List(context.Background(), listOptions)
