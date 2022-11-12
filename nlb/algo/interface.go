@@ -1,5 +1,7 @@
 package algo
 
+import "nlb/k8s"
+
 type Algorithm interface {
-	GetIP(*[]string) (string, error)
+	GetIP(*[]*k8s.PodDetails) (string, error)
 }

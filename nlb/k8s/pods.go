@@ -13,6 +13,11 @@ import (
 
 var Client *kubernetes.Clientset
 
+type PodDetails struct {
+	IP     string
+	Memory float64
+}
+
 func NewClient() error {
 	var kubeconfig *string
 	if home := homedir.HomeDir(); home != "" {
@@ -44,10 +49,10 @@ func GetPodDetails(podName string) (string, error) {
 	return pod.Status.PodIP, nil
 }
 
-func ListPod() ([]string, error) {
+func ListPod() ([]*PodDetails, error) {
 
 	listOptions := metav1.ListOptions{
-		LabelSelector: "app.kubernetes.io/name=server",
+		LabelSelector: "app.server/filter=server",
 	}
 
 	podList, err := Client.CoreV1().Pods("default").List(context.Background(), listOptions)
@@ -55,10 +60,14 @@ func ListPod() ([]string, error) {
 		return nil, err
 	}
 
-	podIPs := make([]string, 0)
+	podIPs := make([]*PodDetails, 0)
 	for _, v := range podList.Items {
 		if v.Status.Phase == "Running" {
-			podIPs = append(podIPs, v.Status.PodIP)
+			p := &PodDetails{
+				IP:     v.Status.PodIP,
+				Memory: v.Spec.Containers[0].Resources.Requests.Memory().AsApproximateFloat64(),
+			}
+			podIPs = append(podIPs, p)
 		}
 	}
 

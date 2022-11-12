@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-var Ips *[]string
+var Ips *[]*k8s.PodDetails
 var algoIP algo.Algorithm
 
 func health(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +62,8 @@ func ProxyRequestHandler() func(http.ResponseWriter, *http.Request) {
 		} else {
 			fmt.Println("Client does not have a cookie, generating...")
 			//Get a random ip and set serverIp to the random server ip
-			serverIp, _ = algoIP.GetIP(Ips)
+			// serverIp, _ = algoIP.GetIP(Ips)
+			serverIp := "10.1.0.145"
 			//TODO: Maybe use a hash to generate the message for encryption
 			//Encrypt the server ip and set that as the value of the cookie
 			ipEncrypt = middleware.EncryptMessage("nlb-cookie_abcde", serverIp+"_abcdef")
@@ -92,7 +93,7 @@ func UpdateIP() {
 			panic(err)
 		}
 
-		fmt.Println(ips)
+		fmt.Printf("%v", ips)
 		Ips = &ips
 		time.Sleep(2 * time.Second)
 	}
