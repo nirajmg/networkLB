@@ -10,7 +10,6 @@ import (
 	"nlb/algo"
 	"nlb/k8s"
 	"nlb/middleware"
-	"strings"
 	"time"
 )
 
@@ -37,50 +36,44 @@ func ProxyRequestHandler() func(http.ResponseWriter, *http.Request) {
 	//parse the request
 	fmt.Println("In Proxy Request Handler")
 	return func(w http.ResponseWriter, r *http.Request) {
-		// angel has a cookie
-		// read the cookie , remove from the request , take the ip and send it to that ip
-		// just need r
-		// also make sure that return has cookie
-
-		// oh no she doesnt
-		// generate cookie for now put a random server ip cookie = ip
-		// this should happend after server finished the response
-		// generate a encryption, map the encryption to ip
-
 		cookies := r.Cookies()
-		fmt.Println("Cookies: ", cookies)
 		serverIp := ""
-		ipEncrypt := ""
+		// ipEncrypt := ""
 		isCookieExist := middleware.CookieExists(cookies, "nlb-cookie_abcde")
 
 		if isCookieExist {
-			encryptedIp := middleware.Read(w, r)
-			decryptedMessage := string(middleware.DecryptMessage("nlb-cookie_abcde", encryptedIp))
-			strArr := strings.Split(decryptedMessage, "_")
-			serverIp = strArr[0]
+			fmt.Println("HERE!: Cookie exists!")
+			serverIp = middleware.ReadCookie(w, r)
+			// byteStr := []byte(serverIp)
+			// fmt.Println("Decrypt:", middleware.DecryptValue(byteStr))
+			// decryptedMessage := string(middleware.DecryptMessage("nlb-cookie_abcde", encryptedIp))
+			// strArr := strings.Split(decryptedMessage, "_")
+			// serverIp = strArr[0]
 			//TODO: Strip the cookie information (LATER)
 		} else {
-			fmt.Println("Client does not have a cookie, generating...")
+			fmt.Println("HERE!: Client does not have a cookie, generating...")
 			//Get a random ip and set serverIp to the random server ip
-			// serverIp, _ = algoIP.GetIP(Ips)
-			serverIp := "10.1.0.145"
-			//TODO: Maybe use a hash to generate the message for encryption
+			serverIp, _ = algoIP.GetIP(Ips)
 			//Encrypt the server ip and set that as the value of the cookie
-			ipEncrypt = middleware.EncryptMessage("nlb-cookie_abcde", serverIp+"_abcdef")
+			// ipEncrypt = middleware.EncryptMessage("nlb-cookie_abcde", serverIp+"_abcdef")
 		}
+		fmt.Println("Current IP: ", serverIp)
 
-		proxy, err := NewProxy("http://" + serverIp + ":80") //change this line
+		proxy, err := NewProxy("http://" + serverIp + ":80")
 		if err != nil {
 			panic(err)
 		}
+
 		//Configuration here to server, if we get a statuscode of 200 then set the cookie for the client
-		proxy.ModifyResponse = func(res *http.Response) error {
-			if res.StatusCode == 200 {
-				//Set cookie for the client
-				fmt.Println("Encrypted ip:", ipEncrypt)
-				middleware.Set(w, r, ipEncrypt)
+		if isCookieExist {
+			fmt.Println("Setting cookie... ", serverIp)
+			proxy.ModifyResponse = func(res *http.Response) error {
+				if res.StatusCode == 200 {
+					//Set cookie for the client
+					middleware.SetCookie(w, r, serverIp)
+				}
+				return nil
 			}
-			return nil
 		}
 		proxy.ServeHTTP(w, r)
 	}
