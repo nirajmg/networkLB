@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
 	"strconv"
+	"nlb/k8s"
 )
 
 type Ip_Hash struct{
@@ -12,7 +13,7 @@ type Ip_Hash struct{
 	Port string
 }
 
-func hash(ip string, port string, n int, ips []string)(string,error){
+func hash(ip string, port string, n int, ips []*k8s.PodDetails)(string,error){
 
 	//ip_lst := *ips
 
@@ -41,13 +42,13 @@ func hash(ip string, port string, n int, ips []string)(string,error){
 	index := total_num % n
 	log.Print("index: ", index)
 	//lookup corresponding ip
-	server_ip := ips[index]
+	server_ip := ips[index].IP
 	log.Print("server ip: ", server_ip)
 
 	return server_ip, err
 }
 
-func (ih *Ip_Hash) GetIP(ips *[]string)(string, error){
+func (ih *Ip_Hash) GetIP(ips *[]*k8s.PodDetails)(string, error){
 	ip_lst := *ips
 
 	log.Print("hashing ip: ", ih.Ip)

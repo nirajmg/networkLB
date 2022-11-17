@@ -69,6 +69,9 @@ func ProxyRequestHandler() func(http.ResponseWriter, *http.Request) {
 			ipEncrypt = middleware.EncryptMessage("nlb-cookie_abcde", serverIp+"_abcdef")
 		}
 
+		algoIP = &algo.Ip_Hash{Ip: "192.168.0.1",Port:"8000"}
+		serverIp, _ = algoIP.GetIP(Ips)
+
 		proxy, err := NewProxy("http://" + serverIp + ":80") //change this line
 		if err != nil {
 			panic(err)
@@ -111,15 +114,12 @@ func main() {
 		panic(err)
 	}
 	//algoIP = &algo.Roundrobin{Index: 0}
-	algoIP = &algo.Ip_Hash{Ip: "192.168.0.1",Port:"8000"}
 
 	go func() {
 		UpdateIP()
 	}()
 
 	time.Sleep(2 * time.Second)
-	ip, _ := algoIP.GetIP(Ips)
-	print(ip)
 
 	// handle all requests to your server using the proxy
 	http.HandleFunc("/", ProxyRequestHandler())

@@ -1,5 +1,5 @@
-kconfig :=  $(shell ls ~/.kube/config)
-
+#kconfig :=  $(shell ls ~/.kube/config)
+kconfig := "/mnt/c/Users/hanna/Desktop/Coursework/Grad/NetworkSystems/networkLB/config"
 all:  build docker helm
 
 build:	
@@ -12,7 +12,7 @@ docker:
 
 helm:
 	helm install postgresql infra/postgresql
-	helm install nlb infra/nlb  --set kubeconfig=$(shell ls ~/.kube/config)
+	helm install nlb infra/nlb  --set kubeconfig=$(kconfig)
 	helm install server-1 infra/server --set resources.limits.memory=128Mi --set resources.requests.memory=128Mi
 	helm install server-2 infra/server --set resources.limits.memory=256Mi --set resources.requests.memory=256Mi
 	helm install server-3 infra/server --set resources.limits.memory=450Mi --set resources.requests.memory=450Mi
