@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"nlb/algo"
 	"nlb/k8s"
-	"nlb/middleware"
 	"time"
 )
 
@@ -36,28 +35,29 @@ func ProxyRequestHandler() func(http.ResponseWriter, *http.Request) {
 	//parse the request
 	fmt.Println("In Proxy Request Handler")
 	return func(w http.ResponseWriter, r *http.Request) {
-		cookies := r.Cookies()
+		// cookies := r.Cookies()
 		serverIp := ""
 		// ipEncrypt := ""
-		isCookieExist := middleware.CookieExists(cookies, "nlb-cookie_abcde")
+		// isCookieExist := middleware.CookieExists(cookies, "nlb-cookie_abcde")
 
-		if isCookieExist {
-			fmt.Println("HERE!: Cookie exists!")
-			serverIp = middleware.ReadCookie(w, r)
-			// byteStr := []byte(serverIp)
-			// fmt.Println("Decrypt:", middleware.DecryptValue(byteStr))
-			// decryptedMessage := string(middleware.DecryptMessage("nlb-cookie_abcde", encryptedIp))
-			// strArr := strings.Split(decryptedMessage, "_")
-			// serverIp = strArr[0]
-			//TODO: Strip the cookie information (LATER)
-		} else {
-			fmt.Println("HERE!: Client does not have a cookie, generating...")
-			//Get a random ip and set serverIp to the random server ip
-			serverIp, _ = algoIP.GetIP(Ips)
-			//Encrypt the server ip and set that as the value of the cookie
-			// ipEncrypt = middleware.EncryptMessage("nlb-cookie_abcde", serverIp+"_abcdef")
-		}
+		// if isCookieExist {
+		// 	fmt.Println("HERE!: Cookie exists!")
+		// 	serverIp = middleware.ReadCookie(w, r)
+		// 	// byteStr := []byte(serverIp)
+		// 	// fmt.Println("Decrypt:", middleware.DecryptValue(byteStr))
+		// 	// decryptedMessage := string(middleware.DecryptMessage("nlb-cookie_abcde", encryptedIp))
+		// 	// strArr := strings.Split(decryptedMessage, "_")
+		// 	// serverIp = strArr[0]
+		// 	//TODO: Strip the cookie information (LATER)
+		// } else {
+		// 	fmt.Println("HERE!: Client does not have a cookie, generating...")
+		// 	//Get a random ip and set serverIp to the random server ip
+		// 	serverIp, _ = algoIP.GetIP(Ips)
+		// 	//Encrypt the server ip and set that as the value of the cookie
+		// 	// ipEncrypt = middleware.EncryptMessage("nlb-cookie_abcde", serverIp+"_abcdef")
+		// }
 		fmt.Println("Current IP: ", serverIp)
+		fmt.Println("Ips: ", Ips)
 
 		algoIP = &algo.Ip_Hash{Ip: "192.168.0.1", Port: "8000"}
 		serverIp, _ = algoIP.GetIP(Ips)
@@ -68,16 +68,16 @@ func ProxyRequestHandler() func(http.ResponseWriter, *http.Request) {
 		}
 
 		//Configuration here to server, if we get a statuscode of 200 then set the cookie for the client
-		if isCookieExist {
-			fmt.Println("Setting cookie... ", serverIp)
-			proxy.ModifyResponse = func(res *http.Response) error {
-				if res.StatusCode == 200 {
-					//Set cookie for the client
-					middleware.SetCookie(w, r, serverIp)
-				}
-				return nil
-			}
-		}
+		// if isCookieExist {
+		// 	fmt.Println("Setting cookie... ", serverIp)
+		// 	proxy.ModifyResponse = func(res *http.Response) error {
+		// 		if res.StatusCode == 200 {
+		// 			//Set cookie for the client
+		// 			middleware.SetCookie(w, r, serverIp)
+		// 		}
+		// 		return nil
+		// 	}
+		// }
 		proxy.ServeHTTP(w, r)
 	}
 }
@@ -98,25 +98,20 @@ func UpdateIP() {
 func main() {
 	// initialize a reverse proxy and pass the actual backend server url here
 	print("In NLB\n")
-	// if err := k8s.NewClient(); err != nil {
-	// 	panic(err)
-	// }
+	if err := k8s.NewClient(); err != nil {
+		panic(err)
+	}
 
-	//algoIP = &algo.Roundrobin{Index: 0}
-	// _, err := k8s.GetPodDetails("postgresql-0")
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// algoIP = &algo.Roundrobin{Index: 0}
+	algoIP = &algo.Roundrobin{Index: 0}
 
-	// go func() {
-	// 	UpdateIP()
-	// }()
+	go func() {
+		UpdateIP()
+	}()
 
 	time.Sleep(2 * time.Second)
-	// time.Sleep(2 * time.Second)
-	// ip, _ := algoIP.GetIP(Ips)
-	// print(ip)
+	time.Sleep(2 * time.Second)
+	ip, _ := algoIP.GetIP(Ips)
+	print(ip)
 
 	// handle all requests to your server using the proxy
 	http.HandleFunc("/", ProxyRequestHandler())
