@@ -104,6 +104,7 @@ func DecryptValue(encryptedValue []byte) string {
 		fmt.Println("Error decrypting:", err)
 		return ""
 	}
+
 	return string(plainText)
 }
 

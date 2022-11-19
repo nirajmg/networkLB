@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"nlb/algo"
 	"nlb/k8s"
+	"nlb/middleware"
 	"time"
 )
 
@@ -35,27 +36,27 @@ func ProxyRequestHandler() func(http.ResponseWriter, *http.Request) {
 	//parse the request
 	fmt.Println("In Proxy Request Handler")
 	return func(w http.ResponseWriter, r *http.Request) {
-		// cookies := r.Cookies()
+		cookies := r.Cookies()
 		serverIp := ""
 		// ipEncrypt := ""
-		// isCookieExist := middleware.CookieExists(cookies, "nlb-cookie_abcde")
+		isCookieExist := middleware.CookieExists(cookies, "nlb-cookie_abcde")
 
-		// if isCookieExist {
-		// 	fmt.Println("HERE!: Cookie exists!")
-		// 	serverIp = middleware.ReadCookie(w, r)
-		// 	// byteStr := []byte(serverIp)
-		// 	// fmt.Println("Decrypt:", middleware.DecryptValue(byteStr))
-		// 	// decryptedMessage := string(middleware.DecryptMessage("nlb-cookie_abcde", encryptedIp))
-		// 	// strArr := strings.Split(decryptedMessage, "_")
-		// 	// serverIp = strArr[0]
-		// 	//TODO: Strip the cookie information (LATER)
-		// } else {
-		// 	fmt.Println("HERE!: Client does not have a cookie, generating...")
-		// 	//Get a random ip and set serverIp to the random server ip
-		// 	serverIp, _ = algoIP.GetIP(Ips)
-		// 	//Encrypt the server ip and set that as the value of the cookie
-		// 	// ipEncrypt = middleware.EncryptMessage("nlb-cookie_abcde", serverIp+"_abcdef")
-		// }
+		if isCookieExist {
+			fmt.Println("HERE!: Cookie exists!")
+			serverIp = middleware.ReadCookie(w, r)
+			// byteStr := []byte(serverIp)
+			// fmt.Println("Decrypt:", middleware.DecryptValue(byteStr))
+			// decryptedMessage := string(middleware.DecryptMessage("nlb-cookie_abcde", encryptedIp))
+			// strArr := strings.Split(decryptedMessage, "_")
+			// serverIp = strArr[0]
+			//TODO: Strip the cookie information (LATER)
+		} else {
+			fmt.Println("HERE!: Client does not have a cookie, generating...")
+			//Get a random ip and set serverIp to the random server ip
+			serverIp, _ = algoIP.GetIP(Ips)
+			//Encrypt the server ip and set that as the value of the cookie
+			// ipEncrypt = middleware.EncryptMessage("nlb-cookie_abcde", serverIp+"_abcdef")
+		}
 		fmt.Println("Current IP: ", serverIp)
 		fmt.Println("Ips: ", Ips)
 
@@ -68,16 +69,16 @@ func ProxyRequestHandler() func(http.ResponseWriter, *http.Request) {
 		}
 
 		//Configuration here to server, if we get a statuscode of 200 then set the cookie for the client
-		// if isCookieExist {
-		// 	fmt.Println("Setting cookie... ", serverIp)
-		// 	proxy.ModifyResponse = func(res *http.Response) error {
-		// 		if res.StatusCode == 200 {
-		// 			//Set cookie for the client
-		// 			middleware.SetCookie(w, r, serverIp)
-		// 		}
-		// 		return nil
-		// 	}
-		// }
+		if isCookieExist {
+			fmt.Println("Setting cookie... ", serverIp)
+			proxy.ModifyResponse = func(res *http.Response) error {
+				if res.StatusCode == 200 {
+					//Set cookie for the client
+					middleware.SetCookie(w, r, serverIp)
+				}
+				return nil
+			}
+		}
 		proxy.ServeHTTP(w, r)
 	}
 }
@@ -89,7 +90,7 @@ func UpdateIP() {
 			panic(err)
 		}
 
-		fmt.Printf("%v", ips)
+		// fmt.Printf("%v", ips)
 		Ips = &ips
 		time.Sleep(2 * time.Second)
 	}
@@ -102,16 +103,14 @@ func main() {
 		panic(err)
 	}
 
-	algoIP = &algo.Roundrobin{Index: 0}
+	algoIP = &algo.WeightedRoundrobin{Index: 0}
 
 	go func() {
 		UpdateIP()
 	}()
 
 	time.Sleep(2 * time.Second)
-	time.Sleep(2 * time.Second)
-	ip, _ := algoIP.GetIP(Ips)
-	print(ip)
+	algoIP.GetIP(Ips)
 
 	// handle all requests to your server using the proxy
 	http.HandleFunc("/", ProxyRequestHandler())
