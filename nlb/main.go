@@ -38,40 +38,51 @@ func ProxyRequestHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookies := r.Cookies()
 		serverIp := ""
-		// ipEncrypt := ""
+		var err error
 		isCookieExist := middleware.CookieExists(cookies, "nlb-cookie_abcde")
-
+		fmt.Println("Cookie Exists: ", isCookieExist)
 		if isCookieExist {
 			fmt.Println("HERE!: Cookie exists!")
-			serverIp = middleware.ReadCookie(w, r)
+			encryptedIp := middleware.ReadCookie(w, r)
+			// fmt.Println("Encrypted IP: ", encryptedIp)
 			// byteStr := []byte(serverIp)
 			// fmt.Println("Decrypt:", middleware.DecryptValue(byteStr))
 			// decryptedMessage := string(middleware.DecryptMessage("nlb-cookie_abcde", encryptedIp))
 			// strArr := strings.Split(decryptedMessage, "_")
-			// serverIp = strArr[0]
+			serverIp = encryptedIp
 			//TODO: Strip the cookie information (LATER)
 		} else {
 			fmt.Println("HERE!: Client does not have a cookie, generating...")
 			//Get a random ip and set serverIp to the random server ip
-			serverIp, _ = algoIP.GetIP(Ips)
+			serverIp, err = algoIP.GetIP(Ips)
+			if err != nil {
+				fmt.Println(err)
+				algoIP := &algo.WeightedRoundrobin{Index: 0}
+				serverIp, err = algoIP.GetIP(Ips)
+				if err != nil {
+					fmt.Println(err)
+				}
+			}
+
 			//Encrypt the server ip and set that as the value of the cookie
 			// ipEncrypt = middleware.EncryptMessage("nlb-cookie_abcde", serverIp+"_abcdef")
 		}
 		fmt.Println("Current IP: ", serverIp)
 		fmt.Println("Ips: ", Ips)
 
-		algoIP = &algo.Ip_Hash{Ip: "192.168.0.1", Port: "8000"}
-		serverIp, _ = algoIP.GetIP(Ips)
+		// algoIP = &algo.Ip_Hash{Ip: "192.168.0.1", Port: "8000"}
+		// serverIp, _ = algoIP.GetIP(Ips)
 
 		proxy, err := NewProxy("http://" + serverIp + ":80") //change this line
 		if err != nil {
 			panic(err)
 		}
 
-		//Configuration here to server, if we get a statuscode of 200 then set the cookie for the client
-		if isCookieExist {
+		// Configuration here to server, if we get a statuscode of 200 then set the cookie for the client
+		if !isCookieExist {
 			fmt.Println("Setting cookie... ", serverIp)
 			proxy.ModifyResponse = func(res *http.Response) error {
+				fmt.Println("Response: ", res.StatusCode)
 				if res.StatusCode == 200 {
 					//Set cookie for the client
 					middleware.SetCookie(w, r, serverIp)
