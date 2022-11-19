@@ -59,7 +59,7 @@ func ProxyRequestHandler() func(http.ResponseWriter, *http.Request) {
 		}
 		fmt.Println("Current IP: ", serverIp)
 
-		algoIP = &algo.Ip_Hash{Ip: "192.168.0.1",Port:"8000"}
+		algoIP = &algo.Ip_Hash{Ip: "192.168.0.1", Port: "8000"}
 		serverIp, _ = algoIP.GetIP(Ips)
 
 		proxy, err := NewProxy("http://" + serverIp + ":80") //change this line
@@ -98,21 +98,25 @@ func UpdateIP() {
 func main() {
 	// initialize a reverse proxy and pass the actual backend server url here
 	print("In NLB\n")
-	if err := k8s.NewClient(); err != nil {
-		panic(err)
-	}
+	// if err := k8s.NewClient(); err != nil {
+	// 	panic(err)
+	// }
 
-	_, err := k8s.GetPodDetails("postgresql-0")
-	if err != nil {
-		panic(err)
-	}
 	//algoIP = &algo.Roundrobin{Index: 0}
+	// _, err := k8s.GetPodDetails("postgresql-0")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// algoIP = &algo.Roundrobin{Index: 0}
 
-	go func() {
-		UpdateIP()
-	}()
+	// go func() {
+	// 	UpdateIP()
+	// }()
 
 	time.Sleep(2 * time.Second)
+	// time.Sleep(2 * time.Second)
+	// ip, _ := algoIP.GetIP(Ips)
+	// print(ip)
 
 	// handle all requests to your server using the proxy
 	http.HandleFunc("/", ProxyRequestHandler())

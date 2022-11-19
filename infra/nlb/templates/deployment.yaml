@@ -48,11 +48,11 @@ spec:
           volumeMounts:
           - mountPath: /root/.kube/config
             name: kconfig
-            type: FileOrCreate
+            type: DirectoryOrCreate
       volumes:
       - name: kconfig
-        secret:
-          secretName: config
+        hostPath:
+          path: {{.Values.kubeconfig}}
           type: FileOrCreate
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

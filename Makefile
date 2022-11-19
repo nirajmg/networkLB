@@ -1,5 +1,4 @@
-#kconfig :=  $(shell ls ~/.kube/config)
-kconfig := "/mnt/c/Users/hanna/Desktop/Coursework/Grad/NetworkSystems/networkLB/config"
+kconfig :=  $(shell ls ~/.kube/config)
 all:  build docker helm
 
 build:	
