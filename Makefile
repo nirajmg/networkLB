@@ -1,4 +1,9 @@
 kconfig :=  $(shell ls ~/.kube/config)
+DOCKERUSER=us-west3-docker.pkg.dev/lab5-364722/lab7
+PROJECT=lab5-364722
+CLUSTER=cluster-1
+REGION=us-west3-a
+
 all:  build docker helm
 
 build:	
@@ -12,18 +17,16 @@ docker:
 helm:
 	helm install postgresql infra/postgresql
 	helm install nlb infra/nlb  --set kubeconfig=$(kconfig)
-	helm install server-1 infra/server --set resources.limits.memory=128Mi --set resources.requests.memory=128Mi
+	helm install server-1 infra/server --set resources.limits.memory=256Mi --set resources.requests.memory=256Mi
 	helm install server-2 infra/server --set resources.limits.memory=256Mi --set resources.requests.memory=256Mi
-	helm install server-3 infra/server --set resources.limits.memory=450Mi --set resources.requests.memory=450Mi
-	helm install server-4 infra/server --set resources.limits.memory=600Mi --set resources.requests.memory=600Mi 
+	helm install server-3 infra/server --set resources.limits.memory=512Mi --set resources.requests.memory=512Mi
+	# helm install server-4 infra/server --set resources.limits.memory=1024Mi --set resources.requests.memory=1024Mi 
 
 clean:
-	rm -rf nlb/bin
 	helm delete postgresql
 	helm delete nlb
 	helm delete server-1
 	helm delete server-2
 	helm delete server-3
-	helm delete server-4
 
 

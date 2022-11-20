@@ -41,6 +41,9 @@ func ProxyRequestHandler() func(http.ResponseWriter, *http.Request) {
 		var err error
 		isCookieExist := middleware.CookieExists(cookies, "nlb-cookie_abcde")
 		fmt.Println("Cookie Exists: ", isCookieExist)
+
+		fmt.Println(r.RemoteAddr)
+
 		if isCookieExist {
 			fmt.Println("HERE!: Cookie exists!")
 			encryptedIp := middleware.ReadCookie(w, r)
@@ -54,6 +57,7 @@ func ProxyRequestHandler() func(http.ResponseWriter, *http.Request) {
 		} else {
 			fmt.Println("HERE!: Client does not have a cookie, generating...")
 			//Get a random ip and set serverIp to the random server ip
+			algoIP = &algo.Ip_Hash{Address: r.RemoteAddr}
 			serverIp, err = algoIP.GetIP(Ips)
 			if err != nil {
 				fmt.Println(err)
@@ -77,12 +81,13 @@ func ProxyRequestHandler() func(http.ResponseWriter, *http.Request) {
 		if err != nil {
 			panic(err)
 		}
-
+		fmt.Println("http://" + serverIp + ":80")
 		// Configuration here to server, if we get a statuscode of 200 then set the cookie for the client
 		if !isCookieExist {
 			fmt.Println("Setting cookie... ", serverIp)
 			proxy.ModifyResponse = func(res *http.Response) error {
 				fmt.Println("Response: ", res.StatusCode)
+				w.Header().Add("X-Metrics-IP", serverIp)
 				if res.StatusCode == 200 {
 					//Set cookie for the client
 					middleware.SetCookie(w, r, serverIp)
@@ -90,6 +95,7 @@ func ProxyRequestHandler() func(http.ResponseWriter, *http.Request) {
 				return nil
 			}
 		}
+		fmt.Println("timeout")
 		proxy.ServeHTTP(w, r)
 	}
 }
@@ -114,14 +120,13 @@ func main() {
 		panic(err)
 	}
 
-	algoIP = &algo.WeightedRoundrobin{Index: 0}
+	algoIP = &algo.Ip_Hash{}
 
 	go func() {
 		UpdateIP()
 	}()
 
 	time.Sleep(2 * time.Second)
-	algoIP.GetIP(Ips)
 
 	// handle all requests to your server using the proxy
 	http.HandleFunc("/", ProxyRequestHandler())

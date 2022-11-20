@@ -28,6 +28,7 @@ func SetCookie(w http.ResponseWriter, req *http.Request, value string) {
 		Value: value,
 		Path:  "/",
 	})
+
 	fmt.Fprintln(w, "COOKIE WRITTEN - CHECK YOUR BROWSER")
 	fmt.Fprintln(w, "in chrome go to: dev tools / application / cookies")
 }

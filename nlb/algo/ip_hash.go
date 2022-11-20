@@ -2,18 +2,19 @@ package algo
 
 import (
 	//"fmt"
+	"fmt"
 	"log"
-	"strings"
-	"strconv"
 	"nlb/k8s"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
-type Ip_Hash struct{
-	Ip string
-	Port string
+type Ip_Hash struct {
+	Address string
 }
 
-func hash(ip string, port string, n int, ips []*k8s.PodDetails)(string,error){
+func hash(ip string, port string, n int, ips []*k8s.PodDetails) (string, error) {
 
 	//ip_lst := *ips
 
@@ -26,13 +27,13 @@ func hash(ip string, port string, n int, ips []*k8s.PodDetails)(string,error){
 	})
 
 	total_num, err := strconv.Atoi(port)
-	if err != nil{
+	if err != nil {
 		return "", err
 	}
 	//convert string to ints, add ints
-	for _,num := range num_list {
-		new_num,err := strconv.Atoi(num)
-		if err != nil{
+	for _, num := range num_list {
+		new_num, err := strconv.Atoi(num)
+		if err != nil {
 			return "", err
 		}
 		total_num += new_num
@@ -48,13 +49,28 @@ func hash(ip string, port string, n int, ips []*k8s.PodDetails)(string,error){
 	return server_ip, err
 }
 
-func (ih *Ip_Hash) GetIP(ips *[]*k8s.PodDetails)(string, error){
+func validIP4(ipAddress string) bool {
+	ipAddress = strings.Trim(ipAddress, " ")
+
+	re, _ := regexp.Compile(`^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$`)
+	if re.MatchString(ipAddress) {
+		return true
+	}
+	return false
+}
+
+func (ih *Ip_Hash) GetIP(ips *[]*k8s.PodDetails) (string, error) {
 	ip_lst := *ips
 
-	log.Print("hashing ip: ", ih.Ip)
-	log.Print("hashing port: ", ih.Port)
+	s := strings.Split(ih.Address, ":")
+	fmt.Println(s)
+	log.Print("hashing ip: ", s[0])
+	log.Print("hashing port: ", s[1])
 
-	ip,err := hash(ih.Ip, ih.Port, len(ip_lst), ip_lst)
+	if !validIP4(s[0]) {
+		s[0] = "127.0.0.1"
+	}
+	ip, err := hash(s[0], s[1], len(ip_lst), ip_lst)
 
 	return ip, err
 }

@@ -46,14 +46,9 @@ spec:
               path: /health
               port: http
           volumeMounts:
-          - mountPath: /root/.kube/config
-            name: kconfig
-            type: DirectoryOrCreate
-      volumes:
-      - name: kconfig
-        hostPath:
-          path: {{.Values.kubeconfig}}
-          type: FileOrCreate
+           - mountPath: /root/.kube/config
+             name: kconfig
+             type: DirectoryOrCreate
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
@@ -68,3 +63,9 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      volumes:
+      - name: kconfig
+        hostPath:
+          path: {{ .Values.kubeconfig }}
+          type: FileOrCreate
+
