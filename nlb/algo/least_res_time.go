@@ -11,7 +11,7 @@ type LeastResTime struct {
 	ResTimes []int
 }
 
-func (lrt *LeastResTime) GetIP(ips *[]*k8s.PodDetails) (string, error) {
+func (lrt *LeastResTime) GetIP(ips *[]*k8s.PodDetails, clientAddress string) (string, error) {
 
 	client := http.Client{
 		Timeout: 1 * time.Second,
@@ -21,18 +21,17 @@ func (lrt *LeastResTime) GetIP(ips *[]*k8s.PodDetails) (string, error) {
 
 	for _, ip := range ip_lst {
 		start := time.Now()
-		client.Get("https://" + ip.IP + ":80/")
+		client.Get(fmt.Sprintf("http://%s:80/", ip.IP))
 		elapsed := time.Now().Sub(start)
 		lrt.ResTimes = append(lrt.ResTimes, int(elapsed))
 	}
 
-	var m, minIdx = lrt.ResTimes[0], 0
-	for i, e := range lrt.ResTimes {
-		if i == 0 || e < m {
-			m = e
-			minIdx = i
+	var minTime, minIdx = lrt.ResTimes[0], 0
+	for index, resTime := range lrt.ResTimes {
+		if index == 0 || resTime < minTime {
+			minTime = resTime
+			minIdx = index
 		}
 	}
-	fmt.Println(lrt.ResTimes)
 	return ip_lst[minIdx].IP, nil
 }

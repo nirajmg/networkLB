@@ -10,12 +10,13 @@ type WeightedRoundrobin struct {
 	Index int
 }
 
-func (rr *WeightedRoundrobin) GetIP(ips *[]*k8s.PodDetails) (string, error) {
+func (rr *WeightedRoundrobin) GetIP(ips *[]*k8s.PodDetails, clientAddress string) (string, error) {
 
 	ip_lst := *ips
 	var cpu []float64
 	var serverIP []string
 	var total float64
+
 	for _, ip := range ip_lst {
 		serverIP = append(serverIP, ip.IP)
 		if len(cpu) == 0 {
@@ -25,11 +26,13 @@ func (rr *WeightedRoundrobin) GetIP(ips *[]*k8s.PodDetails) (string, error) {
 		}
 		total += ip.Memory
 	}
+
 	randNumber := (rand.Float64()) * total
 	for index, cdf := range cpu {
 		if randNumber < cdf {
 			return serverIP[index], nil
 		}
 	}
+
 	return "", errors.New("failed to get ip")
 }

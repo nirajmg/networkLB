@@ -27,10 +27,9 @@ func NewClient() error {
 	}
 	flag.Parse()
 
-	// use the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
-		panic(err.Error())
+		return err
 	}
 	// creates the clientset
 	Client, err = kubernetes.NewForConfig(config)
@@ -40,6 +39,7 @@ func NewClient() error {
 	return nil
 
 }
+
 func GetPodDetails(podName string) (string, error) {
 
 	pod, err := Client.CoreV1().Pods("default").Get(context.Background(), podName, metav1.GetOptions{})

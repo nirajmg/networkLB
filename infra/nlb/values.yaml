@@ -31,6 +31,11 @@ podAnnotations: {}
 podSecurityContext: {}
   # fsGroup: 2000
 
+env:          
+ - name: "LB_ALGO"
+   value: "lrt"
+
+
 securityContext: {}
   # capabilities:
   #   drop:

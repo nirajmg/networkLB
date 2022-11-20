@@ -5,11 +5,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+
 	"net/http"
 	"time"
 
 	"github.com/caarlos0/env"
 	_ "github.com/lib/pq"
+	log "github.com/sirupsen/logrus"
 )
 
 type User struct {
@@ -26,75 +28,9 @@ type DB struct {
 	Database string `env:"PQ_DB" envDefault:"mydb"`
 }
 
-func addUser(w http.ResponseWriter, r *http.Request) {
-
-	var u User
-	err := json.NewDecoder(r.Body).Decode(&u)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		fmt.Println(err)
-		return
-	}
-	if err := db.insert(u.UserId, u.Description); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		fmt.Println(err)
-		return
-	}
-	fmt.Fprintf(w, "Success")
-}
-func getUser(w http.ResponseWriter, r *http.Request) {
-	var u User
-	err := json.NewDecoder(r.Body).Decode(&u)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		fmt.Println(err)
-		return
-	}
-
-	u.Description, err = db.getByid(u.UserId)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		fmt.Println(err)
-		return
-	}
-	res, err := json.Marshal(u)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		fmt.Println(err)
-		return
-
-	}
-	fmt.Fprintf(w, string(res))
-}
-
-func health(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Healthy")
-}
-
-var db = DB{}
-
-func main() {
-
-	env.Parse(&db)
-
-	if err := db.NewConn(); err != nil {
-		panic(err)
-	}
-
-	http.HandleFunc("/add", addUser)
-	http.HandleFunc("/get", getUser)
-	http.HandleFunc("/", health)
-
-	if err := http.ListenAndServe(":80", nil); err != nil {
-		panic(err)
-	}
-
-}
-
 func (db *DB) NewConn() error {
 	connString := "host=%s port=%d user=%s password=%s dbname=%s sslmode=disable"
 	var err error
-	print(fmt.Sprintf(connString, db.Host, db.Port, db.User, db.Password, db.Database))
 	db.conn, err = sql.Open("postgres", fmt.Sprintf(connString, db.Host, db.Port, db.User, db.Password, db.Database))
 	if err != nil {
 		return err
@@ -128,5 +64,74 @@ func (db *DB) getByid(user_id string) (string, error) {
 		return "", err
 	}
 	return description, nil
+
+}
+
+func addUser(w http.ResponseWriter, r *http.Request) {
+
+	var u User
+	err := json.NewDecoder(r.Body).Decode(&u)
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		log.WithFields(log.Fields{"error": err.Error()}).Error("Invalid inputs")
+		return
+	}
+	if err := db.insert(u.UserId, u.Description); err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		log.WithFields(log.Fields{"error": err.Error()}).Error("Failed to add User")
+		return
+	}
+	fmt.Fprintf(w, "Success")
+}
+
+func getUser(w http.ResponseWriter, r *http.Request) {
+	var u User
+	err := json.NewDecoder(r.Body).Decode(&u)
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		log.WithFields(log.Fields{"error": err.Error()}).Error("Invalid inputs")
+		return
+	}
+
+	u.Description, err = db.getByid(u.UserId)
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		log.WithFields(log.Fields{"error": err.Error()}).Error("Failed to get User by id")
+		return
+	}
+
+	res, err := json.Marshal(u)
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		log.WithFields(log.Fields{"error": err.Error()}).Error("Invalid data from db")
+		return
+
+	}
+	fmt.Fprintf(w, string(res))
+}
+
+func health(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Healthy")
+}
+
+var db = DB{}
+
+func main() {
+	log.SetFormatter(&log.JSONFormatter{})
+	log.Info("Connecting to the database")
+	env.Parse(&db)
+	if err := db.NewConn(); err != nil {
+		log.WithFields(log.Fields{"error": err}).Fatal("Invalid inputs")
+	}
+	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 100
+
+	http.HandleFunc("/add", addUser)
+	http.HandleFunc("/get", getUser)
+	http.HandleFunc("/", health)
+
+	log.Info("Starting webserver")
+	if err := http.ListenAndServe(":80", nil); err != nil {
+		log.WithFields(log.Fields{"error": err}).Fatal("Failed to start webserver")
+	}
 
 }

@@ -11,20 +11,11 @@ import (
 	"github.com/zellyn/kooky/browser/chrome"
 )
 
-// var (
-//
-//	salt       = "saltysalt"
-//	iv         = "                "
-//	length     = 16
-//	password   = ""
-//	iterations = 1003
-//
-// )
+var CookieKey = "nlb-cookie"
 
-// The server can set a cookie
 func SetCookie(w http.ResponseWriter, req *http.Request, value string) {
 	http.SetCookie(w, &http.Cookie{
-		Name:  "nlb-cookie_abcde",
+		Name:  CookieKey,
 		Value: value,
 		Path:  "/",
 	})
@@ -34,7 +25,7 @@ func SetCookie(w http.ResponseWriter, req *http.Request, value string) {
 }
 
 func ReadCookie(w http.ResponseWriter, req *http.Request) string {
-	cookie, err := req.Cookie("nlb-cookie_abcde")
+	cookie, err := req.Cookie(CookieKey)
 	if err != nil {
 		http.Error(w, http.StatusText(400), http.StatusBadRequest)
 	}
@@ -65,31 +56,29 @@ func CookieExists(cookies []*http.Cookie, cookieName string) bool {
 	}
 }
 
-func EncryptMessage(key string, message string) string {
+func EncryptMessage(key string, message string) (string, error) {
 	c, err := aes.NewCipher([]byte(key))
 	if err != nil {
-		fmt.Println(err)
+		return "", err
 	}
 	msgByte := make([]byte, len(message))
 	fmt.Println("Message length", len([]byte(message)))
 	c.Encrypt(msgByte, []byte(message))
-	return hex.EncodeToString(msgByte)
+	return hex.EncodeToString(msgByte), nil
 }
 
-func DecryptMessage(key string, message string) string {
+func DecryptMessage(key string, message string) (string, error) {
 	txt, _ := hex.DecodeString(message)
 	c, err := aes.NewCipher([]byte(key))
 	if err != nil {
-		fmt.Println(err)
+		return "", err
 	}
 	msgByte := make([]byte, len(txt))
 	c.Decrypt(msgByte, []byte(txt))
 
-	msg := string(msgByte[:])
-	return msg
+	return string(msgByte[:]), nil
 }
 
-// ====================================================================
 func GetCookie() {
 	dir, _ := os.UserConfigDir() // "/<USER>/Library/Application Support/"
 	cookiesFile := dir + "/Google/Chrome/Default/Cookies"
