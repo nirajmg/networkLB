@@ -55,7 +55,7 @@ func main() {
 
 	wg.Add(numJobs)
 
-	for w := 1; w <= 100; w++ {
+	for w := 1; w <= 50; w++ {
 		go worker(w, jobs)
 	}
 

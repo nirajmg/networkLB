@@ -35,7 +35,7 @@ func setLBAlgorithm() {
 	algoId, exists := os.LookupEnv("LB_ALGO")
 	if !exists {
 		log.Error("LB_ALGO env missing defaulting to round robin")
-		algoId = "rr"
+		algoId = "lrt"
 	}
 	switch algoId {
 	case "rr":

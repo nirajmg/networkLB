@@ -8,7 +8,6 @@ import (
 )
 
 type LeastResTime struct {
-	ResTimes []int
 }
 
 func (lrt *LeastResTime) GetIP(ips *[]*k8s.PodDetails, clientAddress string) (string, error) {
@@ -18,20 +17,21 @@ func (lrt *LeastResTime) GetIP(ips *[]*k8s.PodDetails, clientAddress string) (st
 	}
 
 	ip_lst := *ips
-
+	var ResTimes []int
 	for _, ip := range ip_lst {
 		start := time.Now()
 		client.Get(fmt.Sprintf("http://%s:80/", ip.IP))
 		elapsed := time.Now().Sub(start)
-		lrt.ResTimes = append(lrt.ResTimes, int(elapsed))
+		ResTimes = append(ResTimes, int(elapsed))
 	}
 
-	var minTime, minIdx = lrt.ResTimes[0], 0
-	for index, resTime := range lrt.ResTimes {
+	var minTime, minIdx = 0, 0
+	for index, resTime := range ResTimes {
 		if index == 0 || resTime < minTime {
 			minTime = resTime
 			minIdx = index
 		}
 	}
+
 	return ip_lst[minIdx].IP, nil
 }
