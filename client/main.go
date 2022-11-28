@@ -14,7 +14,7 @@ import (
 var wg sync.WaitGroup
 var client *http.Client
 var requestURL = "http://localhost:30000/get"
-var csvFile = "csv/lrt.csv"
+var csvFile = "csv/iph.csv"
 var ips [][]string
 
 func sendRequest(m *sync.Mutex) {

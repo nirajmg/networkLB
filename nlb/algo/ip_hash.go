@@ -1,38 +1,20 @@
 package algo
 
 import (
+	"fmt"
 	"nlb/k8s"
 	"regexp"
-	"strconv"
 	"strings"
+
+	"github.com/cespare/xxhash"
 )
 
 type Ip_Hash struct{}
 
 func hash(ip string, port string, ips []*k8s.PodDetails) (string, error) {
 
-	num_list := strings.FieldsFunc(ip, func(r rune) bool {
-		if r == '.' {
-			return true
-		}
-		return false
-	})
-
-	total_num, err := strconv.Atoi(port)
-	if err != nil {
-		return "", err
-	}
-	//convert string to ints, add ints
-	for _, num := range num_list {
-		new_num, err := strconv.Atoi(num)
-		if err != nil {
-			return "", err
-		}
-		total_num += new_num
-	}
-	index := total_num % len(ips)
-
-	return ips[index].IP, err
+	index := xxhash.Sum64String(fmt.Sprintf("%s:%s", ip, port)) % uint64(len(ips))
+	return ips[index].IP, nil
 }
 
 func validIP4(ipAddress string) bool {

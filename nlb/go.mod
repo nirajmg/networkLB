@@ -3,6 +3,7 @@ module nlb
 go 1.17
 
 require (
+	github.com/cespare/xxhash v1.1.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/zellyn/kooky v0.0.0-20221025221128-3e66d684c4db
 	k8s.io/apimachinery v0.25.3
