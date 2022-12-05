@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/zellyn/kooky/browser/chrome"
 )
@@ -15,9 +16,10 @@ var CookieKey = "nlb-cookie"
 
 func SetCookie(w http.ResponseWriter, req *http.Request, value string) {
 	http.SetCookie(w, &http.Cookie{
-		Name:  CookieKey,
-		Value: value,
-		Path:  "/",
+		Name:    CookieKey,
+		Value:   value,
+		Path:    "/",
+		Expires: time.Now().Add(30 * time.Minute),
 	})
 
 	fmt.Fprintln(w, "COOKIE WRITTEN - CHECK YOUR BROWSER")
@@ -30,17 +32,6 @@ func ReadCookie(w http.ResponseWriter, req *http.Request) string {
 		http.Error(w, http.StatusText(400), http.StatusBadRequest)
 	}
 	return cookie.Value
-}
-
-func ExpireCookie(w http.ResponseWriter, req *http.Request) {
-	c, err := req.Cookie("session")
-	if err != nil {
-		http.Redirect(w, req, "/set", http.StatusSeeOther)
-		return
-	}
-	c.MaxAge = -1 // delete cookie
-	http.SetCookie(w, c)
-	http.Redirect(w, req, "/", http.StatusSeeOther)
 }
 
 func CookieExists(cookies []*http.Cookie, cookieName string) bool {
