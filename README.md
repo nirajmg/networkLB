@@ -18,19 +18,23 @@ Implementation of Network Load balancer using Golang . The infrastructure is cre
 ### Installing
 Build 
 ```
- make build &&  make docker 
+make build &&  make docker 
 ```
+
 deploy 
 ```
 make helm
 ```
+
+Running Client Application  
+```
+go run client/main.go
+```
+
+### [Results and analysis](nlb.ipynb)
 
 ## Authors
 - Niraj Gupta
 - Angel Dong 
 - Huilin Han 
 - Adam Hayes 
-
-
-
-

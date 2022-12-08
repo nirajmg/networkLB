@@ -68,6 +68,8 @@ func (db *DB) getByid(user_id string) (string, error) {
 }
 
 func addUser(w http.ResponseWriter, r *http.Request) {
+	log.WithFields(log.Fields{
+		"client": r.RemoteAddr}).Info("Request Details")
 
 	var u User
 	err := json.NewDecoder(r.Body).Decode(&u)
@@ -85,6 +87,9 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func getUser(w http.ResponseWriter, r *http.Request) {
+	log.WithFields(log.Fields{
+		"client": r.RemoteAddr}).Info("Request Details")
+
 	var u User
 	err := json.NewDecoder(r.Body).Decode(&u)
 	if err != nil {

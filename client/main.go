@@ -13,8 +13,8 @@ import (
 
 var wg sync.WaitGroup
 var client *http.Client
-var requestURL = "http://localhost:30000/get"
-var csvFile = "csv/iph.csv"
+var requestURL = "http://localhost:9000/get"
+var csvFile = "csv/demo.csv"
 var ips [][]string
 
 func sendRequest(m *sync.Mutex) {
@@ -34,7 +34,7 @@ func sendRequest(m *sync.Mutex) {
 	}
 	defer resp.Body.Close()
 	endTime := time.Now().Sub(start).String()
-	fmt.Println(resp.StatusCode)
+	// fmt.Println(resp.StatusCode)
 	m.Lock()
 	ips = append(ips, []string{resp.Header.Get("X-Metrics-IP"), endTime, resp.Header.Get("X-Metrics-Time")})
 	m.Unlock()
@@ -50,12 +50,12 @@ func worker(id int, jobs <-chan int) {
 }
 
 func main() {
-	const numJobs = 1000
+	const numJobs = 100
 	jobs := make(chan int, numJobs)
 
 	wg.Add(numJobs)
 
-	for w := 1; w <= 50; w++ {
+	for w := 1; w <= 100; w++ {
 		go worker(w, jobs)
 	}
 

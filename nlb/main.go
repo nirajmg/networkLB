@@ -2,8 +2,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 
+	l "log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -18,6 +21,11 @@ import (
 
 var Ips *[]*k8s.PodDetails
 var algoIP algo.Algorithm
+
+func Servers(w http.ResponseWriter, r *http.Request) {
+	j, _ := json.MarshalIndent(*Ips, "", " ")
+	fmt.Fprintf(w, string(j))
+}
 
 func serverStats() {
 	for {
@@ -35,7 +43,7 @@ func setLBAlgorithm() {
 	algoId, exists := os.LookupEnv("LB_ALGO")
 	if !exists {
 		log.Error("LB_ALGO env missing defaulting to round robin")
-		algoId = "lrt"
+		algoId = "rr"
 	}
 	switch algoId {
 	case "rr":
@@ -129,10 +137,11 @@ func main() {
 
 	log.Info("Setting up the LB algorithms")
 	setLBAlgorithm()
-
+	l.SetOutput(ioutil.Discard)
 	log.Info("Starting the server")
 
 	http.HandleFunc("/", ProxyRequestHandler())
 	http.HandleFunc("/health", health)
+	http.HandleFunc("/servers", Servers)
 	log.Fatal(http.ListenAndServe(":80", nil))
 }
